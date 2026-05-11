@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: minio
+  namespace: argo
+  labels:
+    app: minio
+spec:
+  containers:
+  - name: minio
+    image: minio/minio:latest
+    args: [server, /data]
+    env:
+    - name: MINIO_ROOT_USER
+      value: "admin"
+    - name: MINIO_ROOT_PASSWORD
+      value: "password"
+    ports:
+    - containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: argo
+spec:
+  ports:
+  - port: 9000
+    targetPort: 9000
+  selector:
+    app: minio
