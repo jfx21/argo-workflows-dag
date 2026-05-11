@@ -2,6 +2,7 @@
 
 This project demonstrates a multi-stage data/ML pipeline orchestrated by **Argo Workflows** within a local **Kind** (Kubernetes in Docker) cluster. The goal is to evaluate the performance and reliability trade-offs between sequential (Steps) and parallel (DAG) execution models.
 
+Argo Workflows docs: https://argo-workflows.readthedocs.io/en/latest/
 ## Project Objectives
 * **Execution Models:** Compare the latency of `steps` vs. `dag` templates.
 * **Artifact Management:** Implement S3-compatible data passing using MinIO.
@@ -11,7 +12,7 @@ This project demonstrates a multi-stage data/ML pipeline orchestrated by **Argo 
 ## Project Structure
 - `/infrastructure`: K8s setup (Argo, MinIO)
 - `/src`: Pipeline logic (Python)
-- `/pipelines`: Argo Workflow YAMLs[cite: 3]
+- `/pipelines`: Argo Workflow YAMLs
 - `/docker`: Containerizatio
 
 ## Prerequisites
@@ -47,3 +48,12 @@ chmod +x infrastructure/setup.sh
 **Acessing the dashboard**:
 Once the script finishes, open your browser to: `https://localhost:2746`
 *Note: Since we are using local self-signed certificates, your browser will show a security warning. Click "Advanced" and "Proceed to localhost" to enter the Argo UI*
+
+## Cleanup and Cluster Deletion
+
+To remove the entire environment and free up system resources (Docker/Podman containers and volumes), use the following command:
+
+```bash
+# Deletes the cluster named in your kind-cluster.yaml
+kind delete cluster --name $(grep 'name:' kind-cluster.yaml | awk '{print $2}' || echo "kind")
+```
