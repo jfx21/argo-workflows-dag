@@ -10,9 +10,9 @@ echo "Checking Prerequisites..."
 # Function to check and suggest installation
 check_tool() {
     if command -v $1 &> /dev/null; then
-        echo -e "${GREEN}✔ $1 is installed.${NC}"
+        echo -e "${GREEN} $1 is installed.${NC}"
     else
-        echo -e "${RED}✘ $1 is NOT installed.${NC}"
+        echo -e "${RED} $1 is NOT installed.${NC}"
         install_tool $1
     fi
 }
