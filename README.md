@@ -49,6 +49,118 @@ chmod +x infrastructure/setup.sh
 Once the script finishes, open your browser to: `https://localhost:2746`
 *Note: Since we are using local self-signed certificates, your browser will show a security warning. Click "Advanced" and "Proceed to localhost" to enter the Argo UI*
 
+## Step 2
+
+The Python pipeline simulates a typical data/ML workflow:
+
+```text
+generate data -> split data -> preprocess partitions -> merge data -> train model -> evaluate model -> collect metrics
+```
+
+### `generate_data.py`
+
+Generates a synthetic tabular dataset. The parameters are:
+
+```text
+rows      number of generated rows
+features  number of generated feature columns
+```
+
+### `split_data.py`
+
+Splits the generated dataset into row-based partitions.
+
+Each part contains a subset of rows and all feature columns.
+
+Argo uses this file to dynamically create preprocessing tasks.
+
+### `preprocess.py`
+
+Processes one partition. For example, for `part-id=0`, it reads:
+
+```text
+part-0.csv
+```
+
+and writes:
+
+```text
+processed-0.csv
+```
+
+This stage performs simple feature engineering and normalization. It is the main parallelizable part of the pipeline.
+
+### `merge_data.py`
+
+Merges all processed partitions into one file:
+
+```text
+merged.csv
+```
+
+### `train_model.py`
+
+Trains a simple logistic regression model using `merged.csv`.
+
+Output:
+
+```text
+model.pkl
+```
+
+### `evaluate_model.py`
+
+Evaluates the trained model and writes metrics such as accuracy.
+
+Output:
+
+```text
+evaluation-metrics.json
+```
+
+### `collect_metrics.py`
+
+Collects per-stage metrics into one benchmark file.
+
+Output:
+
+```text
+benchmark-summary.json
+```
+
+The benchmark summary is stored as an Argo artifact and can be inspected in Argo UI or MinIO.
+
+### Steps and DAG workflow
+Workflows will be compared with different values of rows and features of generated data, and different number of parts in which data is split.
+
+
+For now, the **Steps workflow** is static and processes three partitions sequentially:
+
+```text
+generate -> split -> preprocess-0 -> preprocess-1 -> preprocess-2 -> merge -> train -> evaluate -> collect metrics
+```
+
+This is used as the sequential baseline.
+
+To run it:
+```bash
+argo submit pipelines/workflow-steps-3.yaml -n argo   -p rows=<number-of-rows>   -p features=<number-of-features>   --watch
+```
+
+The **DAG workflow** is dynamic. It uses the `parts` parameter to automatically create the required number of preprocessing tasks.
+
+To run it:
+```bash
+argo submit pipelines/workflow-dag.yaml -n argo   -p rows=<number-of-rows>   -p features=<number-of-features> -p parts=<number-of-parts>   --watch
+```
+
+This allows comparison between sequential execution and parallel execution. The best way to check saved metrics is by MinIO: 
+```bash
+kubectl port-forward -n argo svc/minio 9001:9001
+```
+- login: admin
+- password: password
+
 ## Cleanup and Cluster Deletion
 
 To remove the entire environment and free up system resources (Docker/Podman containers and volumes), use the following command:

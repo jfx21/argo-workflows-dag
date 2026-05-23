@@ -17,20 +17,48 @@ kubectl patch svc argo-server -n argo -p '{"spec": {"type": "NodePort", "ports":
 # 5. Configure Auth Mode (Disables login requirements for local dev)[cite: 6]
 kubectl patch deployment argo-server -n argo --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--auth-mode=server"}]'
 
-# 6. Step 1.3: Deploy Artifact Storage (MinIO)
-kubectl apply -f infrastructure/minio-setup.yaml
-
-# 7. Step 1.4: Apply RBAC Permissions
-kubectl apply -f infrastructure/rbac.yaml
-
-# 8. Configure Argo Artifact Repository[cite: 3]
+# 6. Configure Argo Artifact Repository[cite: 3]
 # Create credentials secret for MinIO
 kubectl create secret generic argo-artifacts \
   --from-literal=accesskey=admin \
   --from-literal=secretkey=password \
-  -n argo
+  -n argo \
+  --dry-run=client -o yaml | kubectl apply -f -
 
-# Patch the controller to use MinIO as the default S3 repository
-kubectl patch configmap workflow-controller-configmap -n argo --type merge -p '{"data": {"artifactRepository":"\n  s3:\n    bucket: my-bucket\n    endpoint: minio:9000\n    insecure: true\n    accessKeySecret:\n      name: argo-artifacts\n      key: accesskey\n    secretKeySecret:\n      name: argo-artifacts\n      key: secretkey"}}'
+# 7. Step 1.3: Deploy Artifact Storage (MinIO) and wait for finish
+kubectl apply -f infrastructure/minio-setup.yaml
+kubectl rollout status deployment/minio -n argo --timeout=180s
 
-echo "Phase 1 Complete. Argo UI: https://localhost:2746"
+# 8. Step 1.4: Apply RBAC Permissions
+kubectl apply -f infrastructure/rbac.yaml
+
+# 9. Create MinIO bucket
+kubectl run minio-client-create-bucket -n argo --rm -i \
+  --image=minio/mc:latest \
+  --restart=Never \
+  --command -- /bin/sh -c \
+  "mc alias set local http://minio:9000 admin password && mc mb --ignore-existing local/my-bucket && mc ls local"
+
+# 10. Patch the controller to use MinIO as the default S3 repository
+kubectl patch configmap workflow-controller-configmap -n argo --type merge -p '{"data": {"artifactRepository":"s3:\n  bucket: my-bucket\n  endpoint: minio:9000\n  insecure: true\n  accessKeySecret:\n    name: argo-artifacts\n    key: accesskey\n  secretKeySecret:\n    name: argo-artifacts\n    key: secretkey\n"}}'
+kubectl rollout restart deployment/workflow-controller -n argo
+kubectl rollout status deployment/workflow-controller -n argo --timeout=180s
+
+# 11. Build Docker Image
+docker build -t argo-ml:local -f docker/Dockerfile .
+
+# 12. Save Docker Image
+mkdir -p kind-images
+docker save argo-ml:local -o ./kind-images/argo-ml-local.tar
+
+#13. Load Docker Image into Kind cluster
+ls -lh ./kind-images/argo-ml-local.tar
+
+kind load image-archive ./kind-images/argo-ml-local.tar --name kind-cluster
+
+
+echo "Setup Complete."
+echo "Argo UI: "
+echo "  https://localhost:2746"
+echo "MinIO UI:"
+echo "  kubectl port-forward -n argo svc/minio 9001:9001"
