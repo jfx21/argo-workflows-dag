@@ -35,6 +35,12 @@ spec:
           ports:
             - containerPort: 9000
             - containerPort: 9001
+          volumeMounts:
+            - name: minio-storage
+              mountPath: /data
+      volumes:
+        - name: minio-storage
+          emptyDir: {} 
 ---
 apiVersion: v1
 kind: Service
