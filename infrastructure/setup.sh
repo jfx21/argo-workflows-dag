@@ -13,7 +13,7 @@ kind create cluster --config kind-cluster.yaml
 # 2. Create Namespace
 kubectl create namespace argo
 
-# 3. Deploy Secret FIRST (Fixes MinIO valueFrom dependency)
+# 3. Deploy Secret
 kubectl create secret generic argo-artifacts \
   --from-literal=accesskey=admin \
   --from-literal=secretkey=password \
@@ -27,7 +27,7 @@ kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/dow
 kubectl patch svc argo-server -n argo -p '{"spec": {"type": "NodePort", "ports": [{"port": 2746, "nodePort": 30000}]}}'
 kubectl patch deployment argo-server -n argo --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--auth-mode=server"}]'
 
-# 6. Deploy MinIO (Now safe with emptyDir volume and existing secrets)
+# 6. Deploy MinIO
 kubectl apply -f infrastructure/minio-setup.yaml
 kubectl rollout status deployment/minio -n argo --timeout=180s
 
