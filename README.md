@@ -161,6 +161,16 @@ kubectl port-forward -n argo svc/minio 9001:9001
 - login: admin
 - password: password
 
+## Step 3: Fault-Tolerance & Resilience Testing
+
+This phase evaluates how the pipeline handles unexpected task failures and executes cleanups.
+
+### 1. Execute the Resilient Pipeline
+Submit the workflow containing the retry strategies and exit handlers to the cluster.
+```bash
+argo submit -n argo --watch pipelines/workflow-resilience.yaml
+```
+
 ## Cleanup and Cluster Deletion
 
 To remove the entire environment and free up system resources (Docker/Podman containers and volumes), use the following command:
