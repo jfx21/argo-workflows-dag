@@ -67,7 +67,7 @@ spec:
 
     - name: generate-data
       container:
-        image: argo-ml:local
+        image: localhost/argo-ml:local
         imagePullPolicy: Never
         command: ["python"]
         args:
@@ -86,7 +86,7 @@ spec:
 
     - name: split-data
       container:
-        image: argo-ml:local
+        image: localhost/argo-ml:local
         imagePullPolicy: Never
         command: ["python"]
         args:
@@ -117,7 +117,7 @@ spec:
           factor: 2
           maxDuration: "30s"
       container:
-        image: argo-ml:local
+        image: localhost/argo-ml:local
         imagePullPolicy: Never
         command: ["python"]
         args:
@@ -138,7 +138,7 @@ spec:
 
     - name: merge-data
       container:
-        image: argo-ml:local
+        image: localhost/argo-ml:local
         imagePullPolicy: Never
         command: ["python"]
         args:
@@ -159,7 +159,7 @@ spec:
 
     - name: train-model
       container:
-        image: argo-ml:local
+        image: localhost/argo-ml:local
         imagePullPolicy: Never
         command: ["python"]
         args:
@@ -180,7 +180,7 @@ spec:
 
     - name: evaluate-model
       container:
-        image: argo-ml:local
+        image: localhost/argo-ml:local
         imagePullPolicy: Never
         command: ["python"]
         args:
@@ -203,7 +203,7 @@ spec:
 
     - name: collect-metrics
       container:
-        image: argo-ml:local
+        image: localhost/argo-ml:local
         imagePullPolicy: Never
         command: ["python"]
         args:
