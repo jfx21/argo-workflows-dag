@@ -171,6 +171,27 @@ Submit the workflow containing the retry strategies and exit handlers to the clu
 argo submit -n argo --watch pipelines/workflow-resilience.yaml
 ```
 
+### Step 4: Visual Analysis via the Argo Dashboard
+
+You can utilize the built-in Argo Web Console to visualize the structural performance difference between both models.
+
+#### Accessing the UI
+1. Navigate to: `https://localhost:2746` (Bypass any local TLS browser warnings by clicking *Advanced* -> *Proceed*).
+2. Switch the namespace dropdown at the top left to `argo`.
+3. Select your workflow from the history list to open its visual layout.
+
+#### Identifying the Critical Path in the UI Graph View
+* **Sequential Baseline (`workflow-steps-3.yaml`):** The dashboard will display a strictly linear vertical chain of tasks. The critical path is rigid, as every step must wait for the exact moment the previous pod finishes.
+* **Parallel DAG (`workflow-dag.yaml`):** The graph view dynamically maps out the dependencies. You will visually see the execution graph explode horizontally at the `preprocess` step into multiple distinct pods running concurrently, then converge back into a single track at the `merge-data` step.
+
+#### Inspecting the Gantt Chart (Timeline View)
+Click the **Timeline** tab in the top-right corner of your workflow view. This interactive chart visually maps out:
+* **Scheduling Latency:** The gray bar showing how long a pod waited for Kind to allocate resource capacity.
+* **Wall-Clock Duration:** Colored bars indicating exactly when tasks crunched data simultaneously (overlapping blocks in the DAG view) versus sequentially (stair-step blocks in the Steps view).
+
+### Workflow Example Graph
+![Workflow Example](assets/workflow_example.png)
+
 ## Cleanup and Cluster Deletion
 
 To remove the entire environment and free up system resources (Docker/Podman containers and volumes), use the following command:
