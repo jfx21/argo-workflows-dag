@@ -1,0 +1,113 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dag-storage-sensitive-
+spec:
+  serviceAccountName: argo-executor
+  entrypoint: dag-storage-sensitive
+
+  volumeClaimTemplates:
+    - metadata:
+        name: workdir
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+
+  templates:
+    - name: dag-storage-sensitive
+      dag:
+        tasks:
+          - name: task-0
+            template: storage-task
+            arguments:
+              parameters:
+                - name: task-id
+                  value: "0"
+
+          - name: task-1
+            template: storage-task
+            arguments:
+              parameters:
+                - name: task-id
+                  value: "1"
+
+          - name: task-2
+            template: storage-task
+            arguments:
+              parameters:
+                - name: task-id
+                  value: "2"
+
+          - name: task-3
+            template: storage-task
+            arguments:
+              parameters:
+                - name: task-id
+                  value: "3"
+
+          - name: export-results-to-s3
+            dependencies: [task-0, task-1, task-2, task-3]
+            template: export-to-s3
+            arguments:
+              parameters:
+                - name: path
+                  value: /mnt/work/storage-results
+                - name: prefix
+                  value: "runs/{{workflow.name}}/storage-sensitive-results"
+
+    - name: storage-task
+      inputs:
+        parameters:
+          - name: task-id
+      retryStrategy:
+        limit: 3
+        retryPolicy: "OnFailure"
+        backoff:
+          duration: "5s"
+          factor: 2
+          maxDuration: "30s"
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/storage_sensitive_task.py
+          - --task-id
+          - "{{inputs.parameters.task-id}}"
+          - --lock-file
+          - /mnt/work/shared.lock
+          - --output-dir
+          - /mnt/work/storage-results
+          - --work-seconds
+          - "5"
+          - --max-wait-seconds
+          - "2"
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
+
+    - name: export-to-s3
+      inputs:
+        parameters:
+          - name: path
+          - name: prefix
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/export_to_s3.py
+          - --path
+          - "{{inputs.parameters.path}}"
+          - --bucket
+          - argo-workflows-lsc
+          - --prefix
+          - "{{inputs.parameters.prefix}}"
+        envFrom:
+          - secretRef:
+              name: aws-s3-credentials
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work

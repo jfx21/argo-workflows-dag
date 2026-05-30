@@ -1,0 +1,248 @@
+s3:
+
+dag:
+Duration:            1 minute 31 seconds
+Progress:            16/16
+ResourcesDuration:   3m32s*(1 cpu),3m32s*(100Mi memory)
+Parameters:          
+  rows:              30000
+  features:          20
+  parts:             3
+
+STEP                          TEMPLATE         PODNAME                                              DURATION  MESSAGE
+ ✔ ml-pipeline-dag-s3-xhwx4   dag-pipeline                                                                      
+ ├─✔ generate-data            generate-data    ml-pipeline-dag-s3-xhwx4-generate-data-1193066861    6s          
+ ├─✔ export-raw-to-s3         export-to-s3     ml-pipeline-dag-s3-xhwx4-export-to-s3-1018607407     13s         
+ ├─✔ split-data               split-data       ml-pipeline-dag-s3-xhwx4-split-data-3402376986       5s          
+ ├─✔ export-parts-to-s3       export-to-s3     ml-pipeline-dag-s3-xhwx4-export-to-s3-3630599971     16s         
+ ├─✔ preprocess(0:0)(0)       preprocess       ml-pipeline-dag-s3-xhwx4-preprocess-1165069715       15s         
+ ├─✔ preprocess(1:1)(0)       preprocess       ml-pipeline-dag-s3-xhwx4-preprocess-3680191535       14s         
+ ├─✔ preprocess(2:2)(0)       preprocess       ml-pipeline-dag-s3-xhwx4-preprocess-176782883        14s         
+ ├─✔ export-processed-to-s3   export-to-s3     ml-pipeline-dag-s3-xhwx4-export-to-s3-214246717      18s         
+ ├─✔ merge-data               merge-data       ml-pipeline-dag-s3-xhwx4-merge-data-2897397886       6s          
+ ├─✔ export-merged-to-s3      export-to-s3     ml-pipeline-dag-s3-xhwx4-export-to-s3-4201253721     13s         
+ ├─✔ train-model              train-model      ml-pipeline-dag-s3-xhwx4-train-model-1962801817      5s          
+ ├─✔ evaluate-model           evaluate-model   ml-pipeline-dag-s3-xhwx4-evaluate-model-4107333146   6s          
+ ├─✔ export-model-to-s3       export-to-s3     ml-pipeline-dag-s3-xhwx4-export-to-s3-2513611816     6s          
+ ├─✔ collect-metrics          collect-metrics  ml-pipeline-dag-s3-xhwx4-collect-metrics-2880674425  5s          
+ ├─✔ export-evaluation-to-s3  export-to-s3     ml-pipeline-dag-s3-xhwx4-export-to-s3-3105977219     6s          
+ └─✔ export-summary-to-s3     export-to-s3     ml-pipeline-dag-s3-xhwx4-export-to-s3-4224010237     5s   
+ 
+steps:
+Duration:            3 minutes 47 seconds
+Progress:            16/16
+ResourcesDuration:   3m8s*(1 cpu),3m8s*(100Mi memory)
+Parameters:          
+  rows:              30000
+  features:          20
+  parts:             3
+
+STEP                            TEMPLATE         PODNAME                                                DURATION  MESSAGE
+ ✔ ml-pipeline-steps-s3-2qjhc   steps-pipeline                                                                      
+ ├───✔ generate-data            generate-data    ml-pipeline-steps-s3-2qjhc-generate-data-576537009     7s          
+ ├───✔ export-raw-to-s3         export-to-s3     ml-pipeline-steps-s3-2qjhc-export-to-s3-1994742744     10s         
+ ├───✔ split-data               split-data       ml-pipeline-steps-s3-2qjhc-split-data-4086554976       4s          
+ ├───✔ export-parts-to-s3       export-to-s3     ml-pipeline-steps-s3-2qjhc-export-to-s3-3548199590     15s         
+ ├───✔ preprocess-part-0(0)     preprocess       ml-pipeline-steps-s3-2qjhc-preprocess-3995176965       13s         
+ ├───✔ preprocess-part-1(0)     preprocess       ml-pipeline-steps-s3-2qjhc-preprocess-2330388027       13s         
+ ├───✔ preprocess-part-2(0)     preprocess       ml-pipeline-steps-s3-2qjhc-preprocess-2007466897       14s         
+ ├───✔ export-processed-to-s3   export-to-s3     ml-pipeline-steps-s3-2qjhc-export-to-s3-3007402556     8s          
+ ├───✔ merge-data               merge-data       ml-pipeline-steps-s3-2qjhc-merge-data-1548526994       6s          
+ ├───✔ export-merged-to-s3      export-to-s3     ml-pipeline-steps-s3-2qjhc-export-to-s3-1731062484     13s         
+ ├───✔ train-model              train-model      ml-pipeline-steps-s3-2qjhc-train-model-3087046394      4s          
+ ├───✔ export-model-to-s3       export-to-s3     ml-pipeline-steps-s3-2qjhc-export-to-s3-1218464434     4s          
+ ├───✔ evaluate-model           evaluate-model   ml-pipeline-steps-s3-2qjhc-evaluate-model-1815579889   5s          
+ ├───✔ export-evaluation-to-s3  export-to-s3     ml-pipeline-steps-s3-2qjhc-export-to-s3-1906963335     4s          
+ ├───✔ collect-metrics          collect-metrics  ml-pipeline-steps-s3-2qjhc-collect-metrics-1159400170  3s          
+ └───✔ export-summary-to-s3     export-to-s3     ml-pipeline-steps-s3-2qjhc-export-to-s3-308153495      4s          
+kuba@kuba-Victus-by-HP-Laptop-16-d0xxx:~/argo-workflows-dag$ 
+
+ 
+ 
+ s3-sensitive task-3:
+ work-seconde = 5, max-wait-seconds=2     retryStrategy:
+        limit: 3
+        retryPolicy: "OnFailure"
+        backoff:
+          duration: "5s"
+          factor: 2
+          maxDuration: "30s"
+          
+ dag:
+Duration:            41 seconds
+Progress:            2/7
+ResourcesDuration:   1m1s*(1 cpu),1m1s*(100Mi memory)
+
+STEP                            TEMPLATE               PODNAME                                              DURATION  MESSAGE
+ ✖ dag-storage-sensitive-nrz8q  dag-storage-sensitive                                                                                              
+ ├─✔ task-0                     storage-task                                                                                                       
+ │ ├─✖ task-0(0)                storage-task           dag-storage-sensitive-nrz8q-storage-task-418018659   10s       Error (exit code 1)          
+ │ └─✔ task-0(1)                storage-task           dag-storage-sensitive-nrz8q-storage-task-4243359718  9s                                     
+ ├─✖ task-1                     storage-task                                                                          Max duration limit exceeded  
+ │ ├─✖ task-1(0)                storage-task           dag-storage-sensitive-nrz8q-storage-task-929437598   10s       Error (exit code 1)          
+ │ └─✖ task-1(1)                storage-task           dag-storage-sensitive-nrz8q-storage-task-3546495899  6s        Error (exit code 1)          
+ ├─✔ task-2(0)                  storage-task           dag-storage-sensitive-nrz8q-storage-task-1082394661  13s                                    
+ ├─✖ task-3                     storage-task                                                                          Max duration limit exceeded  
+ │ ├─✖ task-3(0)                storage-task           dag-storage-sensitive-nrz8q-storage-task-2688880480  10s       Error (exit code 1)          
+ │ └─✖ task-3(1)                storage-task           dag-storage-sensitive-nrz8q-storage-task-1279413389  6s        Error (exit code 1)          
+kuba@kuba-Victus-by-HP-Laptop-16-d0xxx:~/argo-workflows-dag$ 
+
+
+ 
+ steps:
+Duration:            1 minute 0 seconds
+Progress:            5/5
+ResourcesDuration:   49s*(1 cpu),49s*(100Mi memory)
+
+STEP                              TEMPLATE                 PODNAME                                                DURATION  MESSAGE
+ ✔ steps-storage-sensitive-tbnqc  steps-storage-sensitive                                                                     
+ ├───✔ task-0                     storage-task             steps-storage-sensitive-tbnqc-storage-task-3835010464  12s         
+ ├───✔ task-1                     storage-task             steps-storage-sensitive-tbnqc-storage-task-1027186088  7s          
+ ├───✔ task-2                     storage-task             steps-storage-sensitive-tbnqc-storage-task-1504437292  7s          
+ ├───✔ task-3                     storage-task             steps-storage-sensitive-tbnqc-storage-task-88321796    7s          
+ └───✔ export-results-to-s3       export-to-s3             steps-storage-sensitive-tbnqc-export-to-s3-3132034530  4s  
+ 
+ 
+ 
+  s3-sensitive:
+ work-seconde = 4, max-wait-seconds=3    retryStrategy:
+        limit: 5
+        retryPolicy: "OnFailure"
+        backoff:
+          duration: "5s"
+          factor: 1
+          maxDuration: "60s"
+         
+dag:
+Duration:            1 minute 11 seconds
+Progress:            5/11
+ResourcesDuration:   1m47s*(1 cpu),1m47s*(100Mi memory)
+
+STEP                            TEMPLATE               PODNAME                                              DURATION  MESSAGE
+ ✔ dag-storage-sensitive-f2q7w  dag-storage-sensitive                                                                                      
+ ├─✔ task-0                     storage-task                                                                                               
+ │ ├─✖ task-0(0)                storage-task           dag-storage-sensitive-f2q7w-storage-task-3943069219  10s       Error (exit code 1)  
+ │ └─✔ task-0(1)                storage-task           dag-storage-sensitive-f2q7w-storage-task-3473442982  8s                             
+ ├─✔ task-1(0)                  storage-task           dag-storage-sensitive-f2q7w-storage-task-159520862   11s                            
+ ├─✔ task-2                     storage-task                                                                                               
+ │ ├─✖ task-2(0)                storage-task           dag-storage-sensitive-f2q7w-storage-task-312477925   10s       Error (exit code 1)  
+ │ ├─✖ task-2(1)                storage-task           dag-storage-sensitive-f2q7w-storage-task-111293592   7s        Error (exit code 1)  
+ │ └─✔ task-2(2)                storage-task           dag-storage-sensitive-f2q7w-storage-task-2258284371  7s                             
+ ├─✔ task-3                     storage-task                                                                                               
+ │ ├─✖ task-3(0)                storage-task           dag-storage-sensitive-f2q7w-storage-task-1918963744  10s       Error (exit code 1)  
+ │ ├─✖ task-3(1)                storage-task           dag-storage-sensitive-f2q7w-storage-task-509496653   6s        Error (exit code 1)  
+ │ ├─✖ task-3(2)                storage-task           dag-storage-sensitive-f2q7w-storage-task-4133212094  6s        Error (exit code 1)  
+ │ └─✔ task-3(3)                storage-task           dag-storage-sensitive-f2q7w-storage-task-307871035   7s                             
+ └─✔ export-results-to-s3       export-to-s3           dag-storage-sensitive-f2q7w-export-to-s3-1422819662  5s                             
+kuba@kuba-Victus-by-HP-Laptop-16-d0xxx:~/argo-workflows-dag$ 
+
+
+
+s3-sensitive task=6:
+dag:
+Name:                dag-storage-sensitive-8cfcb
+Namespace:           argo
+ServiceAccount:      argo-executor
+Status:              Failed
+Conditions:          
+ PodRunning          False
+ Completed           True
+Created:             Sat May 30 10:33:19 +0200 (1 minute ago)
+Started:             Sat May 30 10:33:19 +0200 (1 minute ago)
+Finished:            Sat May 30 10:34:19 +0200 (now)
+Duration:            1 minute 0 seconds
+Progress:            5/15
+ResourcesDuration:   2m30s*(1 cpu),2m30s*(100Mi memory)
+
+STEP                            TEMPLATE               PODNAME                                              DURATION  MESSAGE
+ ✖ dag-storage-sensitive-8cfcb  dag-storage-sensitive                                                                                              
+ ├─✖ task-0                     storage-task                                                                          Max duration limit exceeded  
+ │ ├─✖ task-0(0)                storage-task           dag-storage-sensitive-8cfcb-storage-task-3004470890  11s       Error (exit code 1)          
+ │ ├─✖ task-0(1)                storage-task           dag-storage-sensitive-8cfcb-storage-task-1326561895  7s        Error (exit code 1)          
+ │ ├─✖ task-0(2)                storage-task           dag-storage-sensitive-8cfcb-storage-task-2937654604  7s        Error (exit code 1)          
+ │ └─✖ task-0(3)                storage-task           dag-storage-sensitive-8cfcb-storage-task-3407280841  7s        Error (exit code 1)          
+ ├─✔ task-1                     storage-task                                                                                                       
+ │ ├─✖ task-1(0)                storage-task           dag-storage-sensitive-8cfcb-storage-task-2487829071  11s       Error (exit code 1)          
+ │ ├─✖ task-1(1)                storage-task           dag-storage-sensitive-8cfcb-storage-task-4165738066  7s        Error (exit code 1)          
+ │ ├─✖ task-1(2)                storage-task           dag-storage-sensitive-8cfcb-storage-task-4031664209  7s        Error (exit code 1)          
+ │ └─✔ task-1(3)                storage-task           dag-storage-sensitive-8cfcb-storage-task-340838292   8s                                     
+ ├─✔ task-2(0)                  storage-task           dag-storage-sensitive-8cfcb-storage-task-2383413036  11s                                    
+ ├─✔ task-3(0)                  storage-task           dag-storage-sensitive-8cfcb-storage-task-3498210993  14s                                    
+ ├─✔ task-4                     storage-task                                                                                                       
+ │ ├─✖ task-4(0)                storage-task           dag-storage-sensitive-8cfcb-storage-task-4077518886  11s       Error (exit code 1)          
+ │ ├─✖ task-4(1)                storage-task           dag-storage-sensitive-8cfcb-storage-task-252177827   7s        Error (exit code 1)          
+ │ └─✔ task-4(2)                storage-task           dag-storage-sensitive-8cfcb-storage-task-2400154344  8s                                     
+ ├─✔ task-5                     storage-task                                                                                                       
+ │ ├─✖ task-5(0)                storage-task           dag-storage-sensitive-8cfcb-storage-task-4012460651  11s       Error (exit code 1)          
+ │ └─✔ task-5(1)                storage-task           dag-storage-sensitive-8cfcb-storage-task-321634734   8s  
+ 
+ 
+ 
+ 
+ steps:
+ Duration:            1 minute 20 seconds
+Progress:            7/7
+ResourcesDuration:   1m15s*(1 cpu),1m15s*(100Mi memory)
+
+STEP                              TEMPLATE                 PODNAME                                                DURATION  MESSAGE
+ ✔ steps-storage-sensitive-nrsmm  steps-storage-sensitive                                                                     
+ ├───✔ task-0                     storage-task             steps-storage-sensitive-nrsmm-storage-task-10718991    12s         
+ ├───✔ task-1                     storage-task             steps-storage-sensitive-nrsmm-storage-task-3522562375  8s          
+ ├───✔ task-2                     storage-task             steps-storage-sensitive-nrsmm-storage-task-4105679195  8s          
+ ├───✔ task-3                     storage-task             steps-storage-sensitive-nrsmm-storage-task-3005006867  8s          
+ ├───✔ task-4                     storage-task             steps-storage-sensitive-nrsmm-storage-task-1057144791  8s          
+ ├───✔ task-5                     storage-task             steps-storage-sensitive-nrsmm-storage-task-1776851663  7s          
+ └───✔ export-results-to-s3       export-to-s3             steps-storage-sensitive-nrsmm-export-to-s3-3739563487  6s          
+kuba@kuba-Victus-by-HP-Laptop-16-d0xxx:~/argo-workflows-dag$ 
+
+
+
+
+
+
+local minio"
+
+dag:
+Duration:            1 minute 24 seconds
+Progress:            9/9
+ResourcesDuration:   1m34s*(1 cpu),1m34s*(100Mi memory)
+Parameters:          
+  rows:              30000
+  features:          20
+  parts:             3
+
+STEP                      TEMPLATE         PODNAME                                          DURATION  MESSAGE
+ ✔ ml-pipeline-dag-ngb9b  dag-pipeline                                                                  
+ ├─✔ generate-data        generate-data    ml-pipeline-dag-ngb9b-generate-data-2174678765   8s          
+ ├─✔ split-data           split-data       ml-pipeline-dag-ngb9b-split-data-3126581146      4s          
+ ├─✔ preprocess(0:0)(0)   preprocess       ml-pipeline-dag-ngb9b-preprocess-3656830483      14s         
+ ├─✔ preprocess(1:1)(0)   preprocess       ml-pipeline-dag-ngb9b-preprocess-1876985007      14s         
+ ├─✔ preprocess(2:2)(0)   preprocess       ml-pipeline-dag-ngb9b-preprocess-2668543651      14s         
+ ├─✔ merge-data           merge-data       ml-pipeline-dag-ngb9b-merge-data-2621602046      5s          
+ ├─✔ train-model          train-model      ml-pipeline-dag-ngb9b-train-model-338744345      4s          
+ ├─✔ evaluate-model       evaluate-model   ml-pipeline-dag-ngb9b-evaluate-model-2412455578  4s          
+ └─✔ collect-metrics      collect-metrics  ml-pipeline-dag-ngb9b-collect-metrics-597330937  3s          
+kuba@kuba-Victus-by-HP-Laptop-16-d0xxx:~/argo-workflows-dag$ 
+
+steps
+Duration:            2 minutes 1 seconds
+Progress:            9/9
+ResourcesDuration:   1m38s*(1 cpu),1m38s*(100Mi memory)
+Parameters:          
+  rows:              30000
+  features:          20
+  parts:             3
+
+STEP                         TEMPLATE         PODNAME                                             DURATION  MESSAGE
+ ✔ ml-pipeline-steps-fcbqg   steps-pipeline                                                                   
+ ├───✔ generate-data         generate-data    ml-pipeline-steps-fcbqg-generate-data-2582460041    8s          
+ ├───✔ split-data            split-data       ml-pipeline-steps-fcbqg-split-data-3894787205       5s          
+ ├───✔ preprocess-part-0(0)  preprocess       ml-pipeline-steps-fcbqg-preprocess-3230796595       14s         
+ ├───✔ preprocess-part-1(0)  preprocess       ml-pipeline-steps-fcbqg-preprocess-102855505        13s         
+ ├───✔ preprocess-part-2(0)  preprocess       ml-pipeline-steps-fcbqg-preprocess-1975402747       13s         
+ ├───✔ merge-data            merge-data       ml-pipeline-steps-fcbqg-merge-data-3004182969       5s          
+ ├───✔ train-model           train-model      ml-pipeline-steps-fcbqg-train-model-1232010903      4s          
+ ├───✔ evaluate-model        evaluate-model   ml-pipeline-steps-fcbqg-evaluate-model-3649644059   4s          
+ └───✔ collect-metrics       collect-metrics  ml-pipeline-steps-fcbqg-collect-metrics-2379162397  4s          
+kuba@kuba-Victus-by-HP-Laptop-16-d0xxx:~/argo-workflows-dag$ 
+

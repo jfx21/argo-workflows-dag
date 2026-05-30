@@ -1,0 +1,316 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: ml-pipeline-steps-s3-
+spec:
+  serviceAccountName: argo-executor
+  entrypoint: steps-pipeline
+  arguments:
+    parameters:
+      - name: rows
+        value: "30000"
+      - name: features
+        value: "20"
+      - name: parts
+        value: "3"
+
+  volumeClaimTemplates:
+    - metadata:
+        name: workdir
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+
+  templates:
+    - name: steps-pipeline
+      steps:
+        - - name: generate-data
+            template: generate-data
+
+        - - name: export-raw-to-s3
+            template: export-to-s3
+            arguments:
+              parameters:
+                - name: path
+                  value: /mnt/work/raw.csv
+                - name: prefix
+                  value: "runs/{{workflow.name}}/raw"
+
+        - - name: split-data
+            template: split-data
+
+        - - name: export-parts-to-s3
+            template: export-to-s3
+            arguments:
+              parameters:
+                - name: path
+                  value: /mnt/work/parts
+                - name: prefix
+                  value: "runs/{{workflow.name}}/parts"
+
+        - - name: preprocess-part-0
+            template: preprocess
+            arguments:
+              parameters:
+                - name: part-id
+                  value: "0"
+
+        - - name: preprocess-part-1
+            template: preprocess
+            arguments:
+              parameters:
+                - name: part-id
+                  value: "1"
+
+        - - name: preprocess-part-2
+            template: preprocess
+            arguments:
+              parameters:
+                - name: part-id
+                  value: "2"
+
+        - - name: export-processed-to-s3
+            template: export-to-s3
+            arguments:
+              parameters:
+                - name: path
+                  value: /mnt/work/processed
+                - name: prefix
+                  value: "runs/{{workflow.name}}/processed"
+
+        - - name: merge-data
+            template: merge-data
+
+        - - name: export-merged-to-s3
+            template: export-to-s3
+            arguments:
+              parameters:
+                - name: path
+                  value: /mnt/work/merged.csv
+                - name: prefix
+                  value: "runs/{{workflow.name}}/merged"
+
+        - - name: train-model
+            template: train-model
+
+        - - name: export-model-to-s3
+            template: export-to-s3
+            arguments:
+              parameters:
+                - name: path
+                  value: /mnt/work/model.pkl
+                - name: prefix
+                  value: "runs/{{workflow.name}}/model"
+
+        - - name: evaluate-model
+            template: evaluate-model
+
+        - - name: export-evaluation-to-s3
+            template: export-to-s3
+            arguments:
+              parameters:
+                - name: path
+                  value: /mnt/work/evaluation-metrics.json
+                - name: prefix
+                  value: "runs/{{workflow.name}}/evaluation"
+
+        - - name: collect-metrics
+            template: collect-metrics
+
+        - - name: export-summary-to-s3
+            template: export-to-s3
+            arguments:
+              parameters:
+                - name: path
+                  value: /mnt/work/benchmark-summary.json
+                - name: prefix
+                  value: "runs/{{workflow.name}}/summary"
+
+    - name: generate-data
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/generate_data.py
+          - --output
+          - /mnt/work/raw.csv
+          - --rows
+          - "{{workflow.parameters.rows}}"
+          - --features
+          - "{{workflow.parameters.features}}"
+          - --metrics-dir
+          - /mnt/work/metrics
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
+
+    - name: split-data
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/split_data.py
+          - --input
+          - /mnt/work/raw.csv
+          - --output-dir
+          - /mnt/work/parts
+          - --parts
+          - "{{workflow.parameters.parts}}"
+          - --parts-json
+          - /mnt/work/parts.json
+          - --metrics-dir
+          - /mnt/work/metrics
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
+
+    - name: preprocess
+      inputs:
+        parameters:
+          - name: part-id
+      retryStrategy:
+        limit: 3
+        retryPolicy: "OnFailure"
+        backoff:
+          duration: "5s"
+          factor: 2
+          maxDuration: "30s"
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/preprocess.py
+          - --parts-dir
+          - /mnt/work/parts
+          - --part-id
+          - "{{inputs.parameters.part-id}}"
+          - --output-dir
+          - /mnt/work/processed
+          - --sleep
+          - "10"
+          - --metrics-dir
+          - /mnt/work/metrics
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
+
+    - name: merge-data
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/merge_data.py
+          - --input-dir
+          - /mnt/work/processed
+          - --output
+          - /mnt/work/merged.csv
+          - --metrics-dir
+          - /mnt/work/metrics
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
+      outputs:
+        artifacts:
+          - name: merged-data
+            path: /mnt/work/merged.csv
+
+    - name: train-model
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/train_model.py
+          - --input
+          - /mnt/work/merged.csv
+          - --model-output
+          - /mnt/work/model.pkl
+          - --metrics-dir
+          - /mnt/work/metrics
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
+      outputs:
+        artifacts:
+          - name: model
+            path: /mnt/work/model.pkl
+
+    - name: evaluate-model
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/evaluate_model.py
+          - --input
+          - /mnt/work/merged.csv
+          - --model
+          - /mnt/work/model.pkl
+          - --metrics-output
+          - /mnt/work/evaluation-metrics.json
+          - --metrics-dir
+          - /mnt/work/metrics
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
+      outputs:
+        artifacts:
+          - name: evaluation-metrics
+            path: /mnt/work/evaluation-metrics.json
+
+    - name: collect-metrics
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/collect_metrics.py
+          - --metrics-dir
+          - /mnt/work/metrics
+          - --output
+          - /mnt/work/benchmark-summary.json
+          - --workflow-type
+          - steps
+          - --rows
+          - "{{workflow.parameters.rows}}"
+          - --features
+          - "{{workflow.parameters.features}}"
+          - --parts
+          - "{{workflow.parameters.parts}}"
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
+      outputs:
+        artifacts:
+          - name: benchmark-summary
+            path: /mnt/work/benchmark-summary.json
+
+    - name: export-to-s3
+      inputs:
+        parameters:
+          - name: path
+          - name: prefix
+      container:
+        image: argo-ml:local
+        imagePullPolicy: Never
+        command: ["python"]
+        args:
+          - src/export_to_s3.py
+          - --path
+          - "{{inputs.parameters.path}}"
+          - --bucket
+          - argo-workflows-lsc
+          - --prefix
+          - "{{inputs.parameters.prefix}}"
+        envFrom:
+          - secretRef:
+              name: aws-s3-credentials
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/work
